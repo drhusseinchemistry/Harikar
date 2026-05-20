@@ -862,6 +862,14 @@ export default function App() {
                             d_needed = helpMarksAdded;
                           }
 
+                          const usedDecision = calculation.helpMarksUsed5;
+                          const remainingDecision = Math.max(0, 5 - usedDecision);
+                          const wasUboorUsedByOther = calculation.subjects.some(s => s.id !== sub.id && s.isPassed && s.helpRuleUsed === '10_marks_rule');
+                          const isUboorAvailable = !wasUboorUsedByOther;
+                          const targetThreshold = isUboorAvailable ? 40 : 50;
+                          const neededHelp = Math.max(0, targetThreshold - sub.score);
+                          const teacherMarksVal = Math.max(0, neededHelp - remainingDecision);
+
                           let failedNoticeText = "";
                           if (isFailedInitially && !isTrulyPassed) {
                             const diff35 = Math.max(0, 35 - sub.score);
@@ -1066,6 +1074,30 @@ export default function App() {
                                           <div className="mt-1 text-[11px] font-semibold block leading-relaxed text-amber-900 bg-amber-500/5 p-2 rounded-lg border border-amber-500/10">
                                             📌 <strong>{LOCALE.r1_notice_prefix[activeLang]}</strong> {failedNoticeText}
                                           </div>
+                                          {remainingDecision > 0 && teacherMarksVal > 0 && (
+                                            <div className="mt-2 text-[11px] font-semibold block leading-relaxed bg-indigo-500/10 text-indigo-950 p-2.5 rounded-lg border border-indigo-500/20 shadow-sm">
+                                              <div className="flex items-center gap-1.5 text-indigo-900 font-bold mb-1">
+                                                <Sparkles size={13} className="text-indigo-600 shrink-0 animate-pulse" />
+                                                <span>
+                                                  {activeLang === 'kub' ? 'ڕێکا زێدەکرنا نمران بۆ دەربازبوونێ ل خولا ئێکێ:' : 
+                                                   activeLang === 'kus' ? 'ڕێگای ئاسان بۆ دەرچوون لە خولی یەکەم:' : 
+                                                   activeLang === 'ar' ? 'طريقة ميسرة للنجاح في الدور الأول:' : 
+                                                   'Easy Path to Pass in Round 1:'}
+                                                </span>
+                                              </div>
+                                              <div className="text-[10.5px] leading-relaxed">
+                                                {activeLang === 'kub' ? (
+                                                  <>ژبەرکو هێشتا <span className="underline decoration-indigo-500 font-extrabold font-mono text-indigo-900">{toLangDigits(remainingDecision, activeLang)}</span> نمرێن بریارێ بۆ ڤی یێت ماین، ل خولا ئێکێ تنێ پێتڤی ب <span className="bg-indigo-100 text-indigo-950 px-1.5 py-0.5 rounded font-mono font-extrabold border border-indigo-200">{toLangDigits(teacherMarksVal, activeLang)}</span> نمرەیە مامۆستا بدەتە تە، دگەل <span className="underline decoration-indigo-500 font-extrabold font-mono text-indigo-900">{toLangDigits(remainingDecision, activeLang)}</span> نمرێن بریارێ دێ بنە <span className="bg-indigo-100 text-indigo-950 px-1.5 py-0.5 rounded font-mono font-extrabold border border-indigo-200">{toLangDigits(neededHelp, activeLang)}</span> نمرە {isUboorAvailable ? 'بۆ گەهشتنا عوبورێ (٤٠) ' : ''}و دێ بیە ناجح!</>
+                                                ) : activeLang === 'kus' ? (
+                                                  <>چونکە هێشتا <span className="underline decoration-indigo-500 font-extrabold font-mono text-indigo-900">{toLangDigits(remainingDecision, activeLang)}</span> نمرەی بڕیارت ماوە بۆ ئەم بابەتە، لە خولی یەکەمدا تەنها پێویستە مامۆستا <span className="bg-indigo-100 text-indigo-950 px-1.5 py-0.5 rounded font-mono font-extrabold border border-indigo-200">{toLangDigits(teacherMarksVal, activeLang)}</span> نمرەت پێ بدات، لەگەڵ <span className="underline decoration-indigo-500 font-extrabold font-mono text-indigo-900">{toLangDigits(remainingDecision, activeLang)}</span> نمرەکەی بڕیار دەبێتە <span className="bg-indigo-100 text-indigo-950 px-1.5 py-0.5 rounded font-mono font-extrabold border border-indigo-200">{toLangDigits(neededHelp, activeLang)}</span> نمرە {isUboorAvailable ? 'بۆ گەییشتن بە عوبور (٤٠) ' : ''}و ڕاستەوخۆ دەبیتە ناجح لە خولی یەکەم!</>
+                                                ) : activeLang === 'ar' ? (
+                                                  <>بما أنه متبقي لديك <span className="underline decoration-indigo-500 font-extrabold font-mono text-indigo-900">{toLangDigits(remainingDecision, activeLang)}</span> درجات قرار للمادة، فأنت بحاجة فقط إلى <span className="bg-indigo-100 text-indigo-950 px-1.5 py-0.5 rounded font-mono font-extrabold border border-indigo-200">{toLangDigits(teacherMarksVal, activeLang)}</span> درجات من الأستاذ في الدور الأول؛ لتجتمع مع الـ <span className="underline decoration-indigo-500 font-extrabold font-mono text-indigo-900">{toLangDigits(remainingDecision, activeLang)}</span> القرار وتصبح إجمالاً <span className="bg-indigo-100 text-indigo-950 px-1.5 py-0.5 rounded font-mono font-extrabold border border-indigo-200">{toLangDigits(neededHelp, activeLang)}</span> درجات {isUboorAvailable ? 'للوصول لعتبة العبور (٤٠) ' : ''}وتنجح مباشرة!</>
+                                                ) : (
+                                                  <>Since you still have <span className="underline decoration-indigo-500 font-extrabold font-mono text-indigo-900">{remainingDecision}</span> decision marks left, you only need the teacher to give you <span className="bg-indigo-100 text-indigo-950 px-1.5 py-0.5 rounded font-mono font-extrabold border border-indigo-200">{teacherMarksVal}</span> more marks in Round 1. Combined with your remaining decision marks, this makes <span className="bg-indigo-100 text-indigo-950 px-1.5 py-0.5 rounded font-mono font-extrabold border border-indigo-200">{neededHelp}</span> marks {isUboorAvailable ? 'to reach the Carry-Over threshold of 40 ' : ''}and pass!</>
+                                                )}
+                                              </div>
+                                            </div>
+                                          )}
                                         </div>
                                       )}
                                     </div>
