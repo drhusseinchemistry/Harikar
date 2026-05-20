@@ -207,8 +207,8 @@ export function calculateGrades(
           isFeasible = false;
         }
 
-        // Under user's constraint: At most one subject can receive decision help
-        if (isFeasible && totalDecision <= 5 && subjectsWithDecision <= 1) {
+        // Under Ministry rules: Total decision marks across all subjects must not exceed 5
+        if (isFeasible && totalDecision <= 5) {
           const metric = getSubsetMetric(S, decisionMap);
           if (isBetter(metric, bestMetric)) {
             bestMetric = metric;

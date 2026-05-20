@@ -864,21 +864,51 @@ export default function App() {
 
                           let failedNoticeText = "";
                           if (isFailedInitially && !isTrulyPassed) {
-                            if (sub.score < 35) {
-                              const diff = 35 - sub.score;
-                              const diff50 = 50 - sub.score;
-                              failedNoticeText = activeLang === 'en' ? `You need ${diff} more marks in Round 1 to qualify for Carry-Over (reaches 35), or ${diff50} marks to achieve a standard pass.` : activeLang === 'ar' ? `تحتاج إلى ${toLangDigits(diff, activeLang)} درجات لتأهيل العبور (وصولاً لـ ٣٥)، أو ${toLangDigits(diff50, activeLang)} درجات للنجاح الكامل.` : `پێویستت بە ${toLangDigits(diff, activeLang)} نمرەیە بۆ دەرچوونی عوبور (بگەی بە ٣٥)، یان ${toLangDigits(diff50, activeLang)} نمرە بۆ دەرچوونی تەواو.`;
-                            } else if (sub.score < 40) {
-                              const diff = 40 - sub.score;
-                              const diff50 = 50 - sub.score;
-                              failedNoticeText = activeLang === 'en' ? `You need ${diff} more marks in Round 1 for standard Carry-Over (reaches 40), or ${diff50} marks to achieve a standard pass.` : activeLang === 'ar' ? `تحتاج إلى ${toLangDigits(diff, activeLang)} درجات للعبور (وصولاً لـ ٤٠)، أو ${toLangDigits(diff50, activeLang)} درجات للنجاح.` : `پێویستت بە ${toLangDigits(diff, activeLang)} نمرەی تر هەیە بۆ عوبوری سادە (بگەی بە ٤٠)، یان ${toLangDigits(diff50, activeLang)} نمرە بۆ دەرچوونی تەواو.`;
-                            } else if (sub.score < 45) {
-                              const diff = 45 - sub.score;
-                              const diff50 = 50 - sub.score;
-                              failedNoticeText = activeLang === 'en' ? `You need ${diff} more marks in Round 1 to unlock easier grace assist (reaches 45), or ${diff50} marks to pass.` : activeLang === 'ar' ? `تحتاج إلى ${toLangDigits(diff, activeLang)} درجات لتفعيل مساعدة أسهل (وصولاً لـ ٤٥)، أو ${toLangDigits(diff50, activeLang)} درجات للنجاح.` : `پێویستت بە ${toLangDigits(diff, activeLang)} نمرەیە لە خولی یەکەمدا بۆ چانسی ئاسانتری بڕیار (بگەی بە ٤٥)، یان ${toLangDigits(diff50, activeLang)} نمرە بۆ دەرچوونی تەواو.`;
+                            const diff35 = Math.max(0, 35 - sub.score);
+                            const diff40 = Math.max(0, 40 - sub.score);
+                            const diff45 = Math.max(0, 45 - sub.score);
+                            const diff50 = Math.max(0, 50 - sub.score);
+
+                            if (activeLang === 'en') {
+                              if (sub.score < 35) {
+                                failedNoticeText = `You need ${diff35} more marks in Round 1 to qualify for Carry-Over (reaches 35), or ${diff50} marks to achieve a standard pass.`;
+                              } else if (sub.score < 40) {
+                                failedNoticeText = `You need ${diff40} more marks in Round 1 for standard Carry-Over (reaches 40), or ${diff50} marks to achieve a standard pass.`;
+                              } else if (sub.score < 45) {
+                                failedNoticeText = `You need ${diff45} more marks in Round 1 to unlock easier grace assist (reaches 45), or ${diff50} marks to pass.`;
+                              } else {
+                                failedNoticeText = `You are short of only ${diff50} marks to achieve a standard raw pass without needing any systemic support.`;
+                              }
+                            } else if (activeLang === 'ar') {
+                              if (sub.score < 35) {
+                                failedNoticeText = `تحتاج إلى ${toLangDigits(diff35, activeLang)} درجات لتأهيل العبور (وصولاً لـ ٣٥)، أو ${toLangDigits(diff50, activeLang)} درجات للنجاح الكامل.`;
+                              } else if (sub.score < 40) {
+                                failedNoticeText = `تحتاج إلى ${toLangDigits(diff40, activeLang)} درجات للعبور (وصولاً لـ ٤٠)، أو ${toLangDigits(diff50, activeLang)} درجات للنجاح.`;
+                              } else if (sub.score < 45) {
+                                failedNoticeText = `تحتاج إلى ${toLangDigits(diff45, activeLang)} درجات لتفعيل مساعدة أسهل (وصولاً لـ ٤٥)، أو ${toLangDigits(diff50, activeLang)} درجات للنجاح.`;
+                              } else {
+                                failedNoticeText = `ينقصك فقط ${toLangDigits(diff50, activeLang)} درجات للنجاح الصرف دون أي مساعدة.`;
+                              }
+                            } else if (activeLang === 'kub') {
+                              if (sub.score < 35) {
+                                failedNoticeText = `تە پێتڤی ب ${toLangDigits(diff35, activeLang)} نمرێن دی هەبوون ل دەورێ ئێکێ بۆ عوبورێ مەرجدار (ببیتە ٣٥)، یان ${toLangDigits(diff50, activeLang)} نمران بۆ دەربازبوونا تەمام (ببیتە ٥٠).`;
+                              } else if (sub.score < 40) {
+                                failedNoticeText = `تە پێتڤی ب ${toLangDigits(diff40, activeLang)} نمرێن دی هەبوون بۆ عوبورێ (ببیتە ٤٠)، یان ${toLangDigits(diff50, activeLang)} بۆ دەربازبوونا تەمام (ببیتە ٥٠).`;
+                              } else if (sub.score < 45) {
+                                failedNoticeText = `تە پێتڤی ب کێم کێم ${toLangDigits(diff45, activeLang)} نمرێن تر هەبوون بۆ چانسەکێ دەست پێ بوونا ئاسانتر (ببیتە ٤٥)، یان ${toLangDigits(diff50, activeLang)} بۆ دەربازبوونا تەمام (ببیتە ٥٠).`;
+                              } else {
+                                failedNoticeText = `بتنێ پێتڤی ب زێدەکرنا ${toLangDigits(diff50, activeLang)} نمرێن تر هەبوون ل دەورێ ئێکێ بۆ تێپەڕ بوونا تەمام (ببیتە ٥٠) و قورتالبوون ژ خولا دووێ.`;
+                              }
                             } else {
-                              const diff = 50 - sub.score;
-                              failedNoticeText = activeLang === 'en' ? `You are short of only ${diff} marks to achieve a standard raw pass without needing any systemic support.` : activeLang === 'ar' ? `ينقصك فقط ${toLangDigits(diff, activeLang)} درجات للنجاح الصرف دون أي مساعدة.` : `تەنها پێویستت بە ${toLangDigits(diff, activeLang)} نمرەی تر هەیە لە خولی یەکەمدا بۆ دەرچوونی تەواوی بێ بڕیار.`;
+                              if (sub.score < 35) {
+                                failedNoticeText = `پێویستت بە ${toLangDigits(diff35, activeLang)} نمرەیە بۆ دەرچوونی عوبور (بگەی بە ٣٥)، یان ${toLangDigits(diff50, activeLang)} نمرە بۆ دەرچوونی تەواو.`;
+                              } else if (sub.score < 40) {
+                                failedNoticeText = `پێویستت بە ${toLangDigits(diff40, activeLang)} نمرەی تر هەیە بۆ عوبوری سادە (بگەی بە ٤٠)، یان ${toLangDigits(diff50, activeLang)} نمرە بۆ دەرچوونی تەواو.`;
+                              } else if (sub.score < 45) {
+                                failedNoticeText = `پێویستت بە ${toLangDigits(diff45, activeLang)} نمرەیە لە خولی یەکەمدا بۆ چانسی ئاسانتری بڕیار (بگەی بە ٤٥)، یان ${toLangDigits(diff50, activeLang)} نمرە بۆ دەرچوونی تەواو.`;
+                              } else {
+                                failedNoticeText = `تەنها پێویستت بە ${toLangDigits(diff50, activeLang)} نمرەی تر هەیە لە خولی یەکەمدا بۆ دەرچوونی تەواوی بێ بڕیار.`;
+                              }
                             }
                           }
 
@@ -1010,7 +1040,7 @@ export default function App() {
                               {isFailedInitially && (
                                 <div className="mt-4 pt-4 border-t border-slate-200/50 space-y-3 shrink-0">
                                   <div className={`rounded-xl border p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 ${isTrulyPassed ? 'bg-emerald-50/60 border-emerald-100 text-emerald-950' : 'bg-amber-50/50 border-amber-100 text-amber-950'}`}>
-                                    <p className="text-[11px] font-semibold leading-relaxed">
+                                    <div className="text-[11px] font-semibold leading-relaxed flex-1 w-full">
                                       {isTrulyPassed ? (
                                         helpRuleUsed === '10_marks_rule' ? (
                                           <span>
@@ -1022,22 +1052,23 @@ export default function App() {
                                           </span>
                                         )
                                       ) : (
-                                        initialFailedCount === 1 ? (
-                                          <div className="space-y-1.5">
+                                        <div className="space-y-2 w-full">
+                                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                                             <span>
-                                              ⚠️ <strong className="font-extrabold text-amber-900">{LOCALE.r1_title_single_fail[activeLang]}</strong> {LOCALE.r1_single_fail_text_1[activeLang]} <span className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded font-mono font-bold">{toLangDigits(sub.score + 15, activeLang)}</span>, {LOCALE.r1_single_fail_text_2[activeLang]}
+                                              ⚠️ <strong className="font-extrabold text-amber-900">{LOCALE.r1_title_single_fail[activeLang]}</strong> {LOCALE.initial_score_was[activeLang]} <span className="bg-rose-100/80 text-rose-900 px-1.5 py-0.5 rounded font-mono font-bold">{toLangDigits(sub.score, activeLang)}</span>
                                             </span>
-                                            <div className="mt-1.5 text-[10.5px] font-semibold block leading-relaxed text-amber-805">
-                                              📌 <strong>{LOCALE.r1_notice_prefix[activeLang]}</strong> {failedNoticeText}
-                                            </div>
+                                            {unsavedFailedCount > 1 && (
+                                              <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-md leading-relaxed">
+                                                {LOCALE.failed_multi_warning[activeLang]}
+                                              </span>
+                                            )}
                                           </div>
-                                        ) : (
-                                          <div className="space-y-1">
-                                            <span>{LOCALE.failed_multi_warning[activeLang]}</span>
+                                          <div className="mt-1 text-[11px] font-semibold block leading-relaxed text-amber-900 bg-amber-500/5 p-2 rounded-lg border border-amber-500/10">
+                                            📌 <strong>{LOCALE.r1_notice_prefix[activeLang]}</strong> {failedNoticeText}
                                           </div>
-                                        )
+                                        </div>
                                       )}
-                                    </p>
+                                    </div>
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap ${isTrulyPassed ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white'}`}>
                                       {isTrulyPassed ? LOCALE.badge_exempt[activeLang] : LOCALE.badge_prepare_r2[activeLang]}
                                     </span>
