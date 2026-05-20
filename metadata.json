@@ -1,0 +1,6 @@
+{
+  "name": "Grades and Uboor Calculator",
+  "description": "An interactive academic calculator for Kurdish school students to evaluate grades, standard/modified help marks (5 & 10 marks rules), and pass or carry-over (uboor) eligibility.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
