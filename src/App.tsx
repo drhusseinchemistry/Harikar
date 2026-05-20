@@ -558,11 +558,30 @@ export default function App() {
         }[activeLang];
 
         text += {
-          kus: `   📝 خولی دووەم: دەبێت نمرەت لە تاقیکردنەوەی خولی دووەمدا کەمتر نەبێت لە « ${dStyle(reqFrom80)} لەسەر ٨٠ » (بۆ ئەوەی کۆی گشتی بە خولی دووەم لەگەڵ نمرەی هەڵسەنگاندن بگاتە ${dStyle(targetScore)} وەک ${uboorLabel}).\n\n`,
-          kub: `   📝 دەورێ دووەم: پێتڤیە نمرەیا تە ل دەورێ دووێ ل سەر جەرەباندنێ کێمتر نەبیت ژ « ${dStyle(reqFrom80)} ژ سەر ٨٠ » (دا کۆم گشتی دگەل عەمەلی بگەهیتە ${dStyle(targetScore)} وەک ${uboorLabel}).\n\n`,
-          ar: `   📝 الدور الثاني: يجب ألا تقل درجتك التحريرية عن « ${dStyle(reqFrom80)} من أصل ٨٠ » (لكي يبلغ المجموع الكلي مع درجة التقييم حاجز ${dStyle(targetScore)} بما يصنف كـ ${uboorLabel}).\n\n`,
-          en: `   📝 Round 2 written exam: Must score at least « ${dStyle(reqFrom80)} out of 80 » (to drive the cumulative grade to ${dStyle(targetScore)} for a ${uboorLabel}).\n\n`
+          kus: `   📝 خولی دووەم: دەبێت نمرەت لە تاقیکردنەوەی خولی دووەمدا کەمتر نەبێت لە « ${dStyle(reqFrom80)} لەسەر ٨٠ » (بۆ ئەوەی کۆی گشتی بە خولی دووەم لەگەڵ نمرەی هەڵسەنگاندن بگاتە ${dStyle(targetScore)} وەک ${uboorLabel}).\n`,
+          kub: `   📝 دەورێ دووەم: پێتڤیە نمرەیا تە ل دەورێ دووێ ل سەر جەرەباندنێ کێمتر نەبیت ژ « ${dStyle(reqFrom80)} ژ سەر ٨٠ » (دا کۆم گشتی دگەل عەمەلی بگەهیتە ${dStyle(targetScore)} وەک ${uboorLabel}).\n`,
+          ar: `   📝 الدور الثاني: يجب ألا تقل درجتك التحريرية عن « ${dStyle(reqFrom80)} من أصل ٨٠ » (لكي يبلغ المجموع الكلي مع درجة التقييم حاجز ${dStyle(targetScore)} بما يصنف كـ ${uboorLabel}).\n`,
+          en: `   📝 Round 2 written exam: Must score at least « ${dStyle(reqFrom80)} out of 80 » (to drive the cumulative grade to ${dStyle(targetScore)} for a ${uboorLabel}).\n`
         }[activeLang];
+
+        const usedDecision = calculation.helpMarksUsed5;
+        const remainingDecision = Math.max(0, 5 - usedDecision);
+        const wasUboorUsedByOther = calculation.subjects.some(s => s.id !== sub.id && s.isPassed && s.helpRuleUsed === '10_marks_rule');
+        const isUboorAvailable = !wasUboorUsedByOther;
+        const targetThreshold = isUboorAvailable ? 40 : 50;
+        const neededHelp = Math.max(0, targetThreshold - sub.originalScore);
+        const teacherMarksVal = Math.max(0, neededHelp - remainingDecision);
+
+        if (remainingDecision > 0 && teacherMarksVal > 0) {
+          text += {
+            kus: `   ✨ ڕێگای ئاسان بۆ دەرچوون لە خولی یەکەم: چونکە هێشتا ${dStyle(remainingDecision)} نمرەی بڕیارت ماوە بۆ ئەم بابەتە، لە خولی یەکەمدا تەنها پێویستە مامۆستا ${dStyle(teacherMarksVal)} نمرەت پێ بدات، لەگەڵ ${dStyle(remainingDecision)} نمرەکەی بڕیار دەبێتە ${dStyle(neededHelp)} نمرە ${isUboorAvailable ? `بۆ گەییشتن بە عوبور (٤٠) ` : ''}و ڕاستەوخۆ دەبیتە ناجح لە خولی یەکەم!\n\n`,
+            kub: `   ✨ ڕێكا ئاسان بۆ دەربازبوونێ ل خولا ئێکێ: ژبەرکو هێشتا ${dStyle(remainingDecision)} نمرێن بریارێ بۆ ڤی یێت ماین، ل خولا ئێکێ تنێ پێتڤی ب ${dStyle(teacherMarksVal)} نمرەیە مامۆستا بدەتە تە، دگەل ${dStyle(remainingDecision)} نمرێن بریارێ دێ بنە ${dStyle(neededHelp)} نمرە ${isUboorAvailable ? `بۆ گەهشتنا عوبورێ (٤٠) ` : ''}و دێ بیە ناجح ل خولا ئێکێ!\n\n`,
+            ar: `   ✨ طريقة ميسرة للنجاح في الدور الأول: بما أنه متبقي لديك ${dStyle(remainingDecision)} درجات قرار للمادة، فأنت بحاجة فقط إلى ${dStyle(teacherMarksVal)} درجات من الأستاذ في الدور الأول؛ لتجتمع مع الـ ${dStyle(remainingDecision)} القرار وتصبح إجمالاً ${dStyle(neededHelp)} درجات ${isUboorAvailable ? `للوصول لعتبة العبور (٤٠) ` : ''}وتنجح مباشرة بالدور الأول!\n\n`,
+            en: `   ✨ Easy Path to Pass in Round 1: Since you still have ${remainingDecision} decision marks left, you only need the teacher to give you ${teacherMarksVal} more marks in Round 1. Combined with your remaining decision marks, this makes ${neededHelp} marks ${isUboorAvailable ? `to reach the Carry-Over threshold of 40 ` : ''}and pass directly in Round 1!\n\n`
+          }[activeLang];
+        } else {
+          text += `\n`;
+        }
       }
     });
 
