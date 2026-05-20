@@ -1,12 +1,14 @@
 export interface SubjectGrade {
   id: string;
   name: string;
+  key?: string; // Optional key used for translation lookup (e.g. 'chemistry')
   score: number; // 0 - 100
 }
 
 export interface SubjectResult {
   id: string;
   name: string;
+  key?: string; // Translation lookup key
   originalScore: number;
   helpMarksAdded: number; // Marks added by help rules
   helpRuleUsed: 'none' | '5_marks_rule' | '10_marks_rule';

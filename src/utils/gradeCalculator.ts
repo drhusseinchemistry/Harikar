@@ -46,6 +46,7 @@ export function calculateGrades(
       subjects: inputSubjects.map((s) => ({
         id: s.id,
         name: s.name || 'بابەتی بێ ناو',
+        key: s.key,
         originalScore: s.score,
         helpMarksAdded: 0,
         helpRuleUsed: 'none',
@@ -271,6 +272,7 @@ export function calculateGrades(
     return {
       id: s.id,
       name: s.name || 'بابەتی بێ ناو',
+      key: s.key,
       originalScore: s.score,
       helpMarksAdded: d_val + u_val,
       helpRuleUsed: ruleUsed,
