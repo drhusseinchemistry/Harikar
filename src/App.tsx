@@ -72,7 +72,7 @@ export default function App() {
   };
 
   const getAssessment = (id: string) => {
-    return assessments[id] || { a1: 10, a2: 10 };
+    return assessments[id] || { a1: 1, a2: 1 };
   };
 
   const updateAssessment = (id: string, field: 'a1' | 'a2', valueStr: string) => {
@@ -82,7 +82,7 @@ export default function App() {
     setAssessments(prev => ({
       ...prev,
       [id]: {
-        ...(prev[id] || { a1: 10, a2: 10 }),
+        ...(prev[id] || { a1: 1, a2: 1 }),
         [field]: val
       }
     }));
