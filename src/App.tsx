@@ -6,6 +6,7 @@ import { calculateGrades } from './utils/gradeCalculator';
 import LanguageSelector from './components/LanguageSelector';
 import StudentSubjectEntry from './components/StudentSubjectEntry';
 import VerdictResultsView from './components/VerdictResultsView';
+import Footer from './components/Footer';
 
 const ALL_SUBJECTS_DEFAULT: SubjectGrade[] = [
   { id: '1', key: 'chemistry', name: 'کیمیا', score: 35 },
@@ -203,6 +204,7 @@ export default function App() {
           copied={copied}
         />
       )}
+      {activeStep > 0 && <Footer activeLang={activeLang} />}
     </div>
   );
 }
