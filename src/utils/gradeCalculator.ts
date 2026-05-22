@@ -35,7 +35,7 @@ export function calculateGrades(
     key: s.key,
     score: s.score,
     idx
-  })).filter(s => s.score < 50);
+  })).filter(s => s.score < 50).sort((a, b) => a.score - b.score);
 
   if (failingSubjects.length === 0) {
     explanationSteps.push({
@@ -65,33 +65,145 @@ export function calculateGrades(
   }
 
   // We have a 5-mark general decision pool
-  let remaining5Pool = 5;
-  const help5Alloc: Record<string, number> = {}; // id -> marks added from 5 pool
-  const help10Alloc: Record<string, number> = {}; // id -> marks added from 10 pool (Uboor)
+  const F = failingSubjects.length;
 
-  // Sort failing subjects by score descending (closest to 50 first) to prioritize the 5-mark pool
-  const sortedFailing = [...failingSubjects].sort((a, b) => b.score - a.score);
+  const distributeDecisionMarks = (count: number, marksLeft: number): number[][] => {
+    if (count === 0) return [[]];
+    if (count === 1) {
+      const results: number[][] = [];
+      for (let i = 0; i <= marksLeft; i++) {
+        results.push([i]);
+      }
+      return results;
+    }
+    const results: number[][] = [];
+    const subDist = distributeDecisionMarks(count - 1, marksLeft);
+    for (const dist of subDist) {
+      const sumUsed = dist.reduce((sum, val) => sum + val, 0);
+      const rem = marksLeft - sumUsed;
+      for (let nextVal = 0; nextVal <= rem; nextVal++) {
+        results.push([...dist, nextVal]);
+      }
+    }
+    return results;
+  };
 
-  // Apply 5-mark pool greedily to subjects that can be completely saved (reach 50)
-  for (const s of sortedFailing) {
-    const need = 50 - s.score;
-    if (need <= remaining5Pool) {
-      help5Alloc[s.id] = need;
-      remaining5Pool -= need;
+  const decisionDistributions = distributeDecisionMarks(F, 5);
+
+  const getPenalty = (gap: number) => {
+    // Cubic penalty to strongly prioritize reducing larger gaps
+    return Math.pow(gap, 3);
+  };
+
+  let bestAllocation: {
+    decisionAlloc: number[];
+    uboorIndex: number;
+    uboorAmount: number;
+    subjectsPassed: number;
+    truePasses: number;
+    totalPenalty: number;
+    totalOfficialHelpUsed: number;
+  } | null = null;
+
+  for (let uIdx = -1; uIdx < F; uIdx++) {
+    for (const dAlloc of decisionDistributions) {
+      // Validate: Cannot allocate more decision marks than needed to pass
+      let isValid = true;
+      for (let i = 0; i < F; i++) {
+        const need = 50 - failingSubjects[i].score;
+        if (dAlloc[i] > need) {
+          isValid = false;
+          break;
+        }
+      }
+      if (!isValid) continue;
+
+      let uAmount = 0;
+      if (uIdx !== -1) {
+        const uSub = failingSubjects[uIdx];
+        const scoreWithD = uSub.score + dAlloc[uIdx];
+        
+        // Eligible for Uboor only if the score after applying decision marks is at least 40
+        if (scoreWithD >= 40) {
+          const needAfterD = 50 - scoreWithD;
+          uAmount = Math.min(10, needAfterD);
+        } else {
+          continue;
+        }
+      }
+
+      // Calculate passed subjects and penalties
+      let currentPenalty = 0;
+      let officialHelpUsed = 0;
+      let subjectsPassed = 0;
+      let truePasses = 0;
+      for (let i = 0; i < F; i++) {
+        const dMarks = dAlloc[i];
+        const uMarks = (i === uIdx) ? uAmount : 0;
+        const finalScore = failingSubjects[i].score + dMarks + uMarks;
+        if (finalScore >= 50) {
+          subjectsPassed++;
+          if (uMarks === 0) {
+            truePasses++;
+          }
+        }
+        const remainingGap = Math.max(0, 50 - finalScore);
+        currentPenalty += getPenalty(remainingGap);
+        officialHelpUsed += dMarks + uMarks;
+      }
+
+      // Uboor can ONLY be used if it results in the student passing the year.
+      // If the student still fails the year, Uboor cannot be applied.
+      if (subjectsPassed < F && uIdx !== -1) {
+        continue;
+      }
+
+      const allocObj = {
+        decisionAlloc: dAlloc,
+        uboorIndex: uIdx,
+        uboorAmount: uAmount,
+        subjectsPassed,
+        truePasses,
+        totalPenalty: currentPenalty,
+        totalOfficialHelpUsed: officialHelpUsed
+      };
+
+      if (bestAllocation === null) {
+        bestAllocation = allocObj;
+      } else {
+        if (allocObj.subjectsPassed > bestAllocation.subjectsPassed) {
+          bestAllocation = allocObj;
+        } else if (allocObj.subjectsPassed === bestAllocation.subjectsPassed) {
+          if (allocObj.truePasses > bestAllocation.truePasses) {
+            bestAllocation = allocObj;
+          } else if (allocObj.truePasses === bestAllocation.truePasses) {
+            if (allocObj.totalPenalty < bestAllocation.totalPenalty) {
+              bestAllocation = allocObj;
+            } else if (
+              allocObj.totalPenalty === bestAllocation.totalPenalty &&
+              allocObj.totalOfficialHelpUsed > bestAllocation.totalOfficialHelpUsed
+            ) {
+              bestAllocation = allocObj;
+            }
+          }
+        }
+      }
     }
   }
 
-  // For any remaining failing subjects, see if we can apply the 10-mark Uboor rule.
-  // The Uboor rule can be applied to at most 1 subject whose score is between 40 and 49 (needing <= 10 marks).
-  // We prioritize the subject closest to 50 for the Uboor rule to maximize passing rate.
-  const activeFailing = failingSubjects.filter(s => !help5Alloc[s.id]);
-  const sortedRemainingFailing = [...activeFailing].sort((a, b) => b.score - a.score);
+  const help5Alloc: Record<string, number> = {};
+  const help10Alloc: Record<string, number> = {};
 
-  if (sortedRemainingFailing.length > 0) {
-    const candidate = sortedRemainingFailing[0];
-    const need = 50 - candidate.score;
-    if (need <= 10 && candidate.score >= 40) {
-      help10Alloc[candidate.id] = need;
+  if (bestAllocation) {
+    const { decisionAlloc, uboorIndex, uboorAmount } = bestAllocation;
+    for (let i = 0; i < F; i++) {
+      const sub = failingSubjects[i];
+      if (decisionAlloc[i] > 0) {
+        help5Alloc[sub.id] = decisionAlloc[i];
+      }
+      if (i === uboorIndex && uboorAmount > 0) {
+        help10Alloc[sub.id] = uboorAmount;
+      }
     }
   }
 
@@ -101,17 +213,13 @@ export function calculateGrades(
     const u_val = help10Alloc[s.id] || 0;
     
     let helpRuleUsed: 'none' | '5_marks_rule' | '10_marks_rule' = 'none';
-    let finalScore = s.score;
-    let isPassed = s.score >= 50;
+    let finalScore = s.score + d_val + u_val;
+    let isPassed = finalScore >= 50;
 
-    if (d_val > 0) {
-      helpRuleUsed = '5_marks_rule';
-      finalScore = s.score + d_val; // 50
-      isPassed = true;
-    } else if (u_val > 0) {
+    if (u_val > 0) {
       helpRuleUsed = '10_marks_rule';
-      finalScore = s.score + u_val; // 50 (Uboor helped)
-      isPassed = true;
+    } else if (d_val > 0) {
+      helpRuleUsed = '5_marks_rule';
     }
 
     return {
@@ -126,7 +234,7 @@ export function calculateGrades(
     };
   });
 
-  const unresolvedFailing = results.filter(s => !s.isPassed || s.helpRuleUsed === 'none' && s.originalScore < 50);
+  const unresolvedFailing = results.filter(s => !s.isPassed);
   const uboorCount = results.filter(s => s.helpRuleUsed === '10_marks_rule').length;
 
   let status: 'passed' | 'uboor' | 'failed' = 'passed';

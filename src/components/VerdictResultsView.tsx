@@ -154,14 +154,17 @@ export default function VerdictResultsView({
   // Find all failed subjects (raw score < 50)
   const failedSubjects = activeSubjects.filter(s => s.score < 50);
   const failedSubjectsForR2 = activeSubjects.filter(sub => {
+    if (calculation.status === 'passed' || calculation.status === 'uboor') {
+      return false;
+    }
     const calcSub = calculation.subjects.find(s => s.id === sub.id);
     if (!calcSub) return sub.score < 50;
     return !calcSub.isPassed || calcSub.helpRuleUsed === '10_marks_rule';
   });
 
-  // Find the failing subject that is closest to 50 (needs the minimum extra marks to pass)
-  const closestToPassSubject = failedSubjects.length > 0 
-    ? [...failedSubjects].sort((a, b) => (50 - a.score) - (50 - b.score))[0] 
+  // The weakest subject is the one with the lowest score. This is designated as the primary candidate for Uboor in Round 2.
+  const weakestSubject = failedSubjects.length > 0 
+    ? [...failedSubjects].sort((a, b) => a.score - b.score)[0] 
     : null;
 
   // Calculates teacher appeal / grace advice by simulating optimal official rules first
@@ -169,6 +172,7 @@ export default function VerdictResultsView({
     // Failing subjects are those with raw score < 50
     const failing = activeSubjects
       .filter(s => s.score < 50)
+      .sort((a, b) => a.score - b.score)
       .map(s => ({
         id: s.id,
         name: getSubjectName(s),
@@ -204,96 +208,99 @@ export default function VerdictResultsView({
     const F = failing.length;
     const decisionDistributions = distributeDecisionMarks(F, 5);
 
-    // Penalty matrix where we highly favor reducing gaps to 1 or 0 (completely passed)
     const getPenalty = (gap: number) => {
-      if (gap === 0) return 0;
-      if (gap === 1) return 1;
-      if (gap === 2) return 5;
-      if (gap === 3) return 15;
-      if (gap === 4) return 40;
-      return 100 + gap * 50;
+      // Cubic penalty to strongly prioritize reducing larger gaps
+      return Math.pow(gap, 3);
     };
 
     let bestAllocation: {
       decisionAlloc: number[];
       uboorIndex: number; // Index of subject getting Uboor, or -1
       uboorAmount: number;
-      totalPenalty: number;
+      teacherAlloc: number[];
+      totalTeacherHelp: number;
       totalOfficialHelpUsed: number;
+      totalPenalty: number;
     } | null = null;
 
     // We can choose which subject receives Uboor (-1 for none, or indices from 0 to F-1)
     for (let uIdx = -1; uIdx < F; uIdx++) {
       for (const dAlloc of decisionDistributions) {
-        // Validation: Cannot allocate more decision marks to any subject than its deficit
-        let isValid = true;
-        for (let i = 0; i < F; i++) {
-          if (dAlloc[i] > failing[i].need) {
-            isValid = false;
-            break;
-          }
-        }
-        if (!isValid) continue;
+        let currentTeacherAlloc: number[] = [];
+        let currentUboorAmount = 0;
+        let totalT = 0;
+        let totalD = 0;
+        let totalU = 0;
+        let currentPenaltyOfAllocation = 0;
 
-        let uAmount = 0;
-        if (uIdx !== -1) {
-          const uSub = failing[uIdx];
-          const scoreWithD = uSub.score + dAlloc[uIdx];
-          
-          // Eligible for Uboor only if the score after applying decision marks is at least 40
-          if (scoreWithD >= 40) {
-            const needAfterD = 50 - scoreWithD;
-            uAmount = Math.min(10, needAfterD);
-          } else {
-            continue;
-          }
-        }
-
-        // Calculate total remaining gaps and their penalties
-        let currentPenalty = 0;
-        let officialHelpUsed = 0;
         for (let i = 0; i < F; i++) {
+          const score = failing[i].score;
           const dMarks = dAlloc[i];
-          const uMarks = (i === uIdx) ? uAmount : 0;
-          const finalScore = failing[i].score + dMarks + uMarks;
+          
+          let tMarks = 0;
+          let uMarks = 0;
+          
+          if (i === uIdx) {
+            // Uboor subject: needs to reach at least 40 as raw + teacher + decision
+            tMarks = Math.max(0, 40 - score - dMarks);
+            currentTeacherAlloc.push(tMarks);
+            totalT += tMarks;
+            
+            // The rest is covered by Uboor (capped at 10)
+            const remainingForUboor = 50 - (score + tMarks + dMarks);
+            uMarks = Math.max(0, Math.min(10, remainingForUboor));
+            currentUboorAmount = uMarks;
+            totalU += uMarks;
+          } else {
+            // Normal subject: needs to reach 50
+            tMarks = Math.max(0, 50 - score - dMarks);
+            currentTeacherAlloc.push(tMarks);
+            totalT += tMarks;
+          }
+          
+          totalD += dMarks;
+
+          // Calculate gap and penalty for this subject in this distribution
+          const finalScore = score + tMarks + dMarks + uMarks;
           const remainingGap = Math.max(0, 50 - finalScore);
-          currentPenalty += getPenalty(remainingGap);
-          officialHelpUsed += dMarks + uMarks;
+          currentPenaltyOfAllocation += getPenalty(remainingGap);
         }
 
         const allocObj = {
           decisionAlloc: dAlloc,
           uboorIndex: uIdx,
-          uboorAmount: uAmount,
-          totalPenalty: currentPenalty,
-          totalOfficialHelpUsed: officialHelpUsed
+          uboorAmount: currentUboorAmount,
+          teacherAlloc: currentTeacherAlloc,
+          totalTeacherHelp: totalT,
+          totalOfficialHelpUsed: totalD + totalU,
+          totalPenalty: currentPenaltyOfAllocation
         };
 
         if (bestAllocation === null) {
           bestAllocation = allocObj;
         } else {
-          // Choose lowest penalty. In case of tie, choose the one using more official help marks
-          if (allocObj.totalPenalty < bestAllocation.totalPenalty) {
-            bestAllocation = allocObj;
-          } else if (
-            allocObj.totalPenalty === bestAllocation.totalPenalty &&
-            allocObj.totalOfficialHelpUsed > bestAllocation.totalOfficialHelpUsed
-          ) {
-            bestAllocation = allocObj;
-          }
+        // Choose lowest teacher help needed. In case of tie, choose the one using more official help marks
+        if (allocObj.totalTeacherHelp < bestAllocation.totalTeacherHelp) {
+          bestAllocation = allocObj;
+        } else if (
+          allocObj.totalTeacherHelp === bestAllocation.totalTeacherHelp &&
+          allocObj.totalOfficialHelpUsed > bestAllocation.totalOfficialHelpUsed
+        ) {
+          bestAllocation = allocObj;
+        }
         }
       }
     }
 
     if (!bestAllocation) return [];
 
-    const { decisionAlloc, uboorIndex, uboorAmount } = bestAllocation;
+    const { decisionAlloc, uboorIndex, uboorAmount, teacherAlloc } = bestAllocation;
 
     return failing.map((s, idx) => {
       const dMarks = decisionAlloc[idx];
       const uMarks = (idx === uboorIndex) ? uboorAmount : 0;
+      const tMarks = teacherAlloc[idx];
       const totalHelp = dMarks + uMarks;
-      const finalScore = s.score + totalHelp;
 
       let helpRuleUsed: '5_marks_rule' | '10_marks_rule' | 'none' = 'none';
       if (uMarks > 0) {
@@ -306,7 +313,7 @@ export default function VerdictResultsView({
         id: s.id,
         name: s.name,
         originalScore: s.score,
-        neededFromTeacher: 50 - finalScore,
+        neededFromTeacher: tMarks,
         helpRuleUsed,
         helpMarksAdded: totalHelp,
         dMarksUsed: dMarks,
@@ -659,7 +666,7 @@ export default function VerdictResultsView({
                         const reqWithDec40 = Math.max(0, 40 - currentSum - remaining5);
 
                         const calcSub = calculation?.subjects.find(s => s.id === sub.id);
-                        const isUboorSubject = calcSub?.helpRuleUsed === '10_marks_rule';
+                        const isUboorSubject = weakestSubject?.id === sub.id;
                         
                         let round2Badge = activeLang === 'en' ? 'ROUND 2 EXAM' : 'کۆنتڕۆڵی خولی دووەم';
                         if (isUboorSubject) {
