@@ -31,8 +31,8 @@ export default function App() {
   const [stageId, setStageId] = useState<string>('10th');
   const [activeStep, setActiveStep] = useState<number>(0);
   
-  // Track continuous assessment (A1, A2)
-  const [assessments, setAssessments] = useState<Record<string, { a1: number; a2: number }>>({});
+  // Track continuous assessment (S1 and S2)
+  const [assessments, setAssessments] = useState<Record<string, { s1a1: number; s1a2: number; s2a1: number; s2a2: number }>>({});
   const [copied, setCopied] = useState(false);
 
   // Subject List
@@ -65,24 +65,39 @@ export default function App() {
   }, [calculation]);
 
   const updateSubjectScore = (id: string, scoreStr: string) => {
-    let score = parseInt(scoreStr) || 0;
+    if (scoreStr === '') {
+      setSubjects(prev => prev.map(s => s.id === id ? { ...s, score: 0 } : s));
+      return;
+    }
+    let score = parseFloat(scoreStr);
+    if (isNaN(score)) score = 0;
     if (score < 0) score = 0;
     if (score > 100) score = 100;
     setSubjects(prev => prev.map(s => s.id === id ? { ...s, score } : s));
   };
 
   const getAssessment = (id: string) => {
-    return assessments[id] || { a1: 1, a2: 1 };
+    return assessments[id] || { s1a1: 0, s1a2: 0, s2a1: 0, s2a2: 0 };
   };
 
-  const updateAssessment = (id: string, field: 'a1' | 'a2', valueStr: string) => {
-    let val = parseInt(valueStr) || 0;
+  const updateAssessment = (id: string, field: 's1a1' | 's1a2' | 's2a1' | 's2a2', valueStr: string) => {
+    if (valueStr === '') {
+      setAssessments(prev => ({
+        ...prev,
+        [id]: {
+          ...(prev[id] || { s1a1: 0, s1a2: 0, s2a1: 0, s2a2: 0 }),
+          [field]: 0
+        }
+      }));
+      return;
+    }
+    let val = parseFloat(valueStr);
+    if (isNaN(val)) val = 0;
     if (val < 0) val = 0;
-    if (val > 10) val = 10;
     setAssessments(prev => ({
       ...prev,
       [id]: {
-        ...(prev[id] || { a1: 1, a2: 1 }),
+        ...(prev[id] || { s1a1: 0, s1a2: 0, s2a1: 0, s2a2: 0 }),
         [field]: val
       }
     }));

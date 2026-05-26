@@ -14,8 +14,8 @@ interface VerdictResultsViewProps {
   averageScore: number;
   initialFailedCount: number;
   finalStatus: 'passed' | 'uboor' | 'failed';
-  getAssessment: (id: string) => { a1: number; a2: number };
-  updateAssessment: (id: string, field: 'a1' | 'a2', valueStr: string) => void;
+  getAssessment: (id: string) => { s1a1: number; s1a2: number; s2a1: number; s2a2: number };
+  updateAssessment: (id: string, field: 's1a1' | 's1a2' | 's2a1' | 's2a2', valueStr: string) => void;
   getSubjectName: (sub: { name: string; key?: string }) => string;
   onModify: () => void;
   onShare: (reportText: string) => void;
@@ -61,12 +61,14 @@ export default function VerdictResultsView({
       r1_safe: 'قوتابی بە تەواوی دەرچووە و پێویستی بە هیچ نمرەیەکی تر نییە بۆ دوورکەوتنەوە لە خولی دووەم! 👏',
       r1_needs: 'بۆ ڕزگاربوون لە خولی دووەم، پێویستە نمرەی ئەم بابەتانەت بگەیەنیتە تێکڕای دەرچوون (٥٠ نمرە):',
       r2_safe: 'قوتابی لە سەرجەم بابەتەکان دەرچووە و پێویستی بە ئامادەکاری نییە بۆ خولی دووەم! 🥳',
-      r2_needs: 'بۆ ئەو بابەتانەی دەرنەچوویت، نمرەی هەڵسەنگاندنی بەردەوام (لە ٢٠) دیاری بکە بۆ ئەوەی بزانیت پێویستە چەند بهێنیت لە ئەزموونی نووسینەکی (لە ٨٠) بۆ دەرچوون:',
-      ass1: 'هەڵسەنگاندنی یەکەم (١٠)',
-      ass2: 'هەڵسەنگاندنی دووەم (١٠)',
+      r2_needs: 'بۆ ئەو بابەتانەی دەرنەچوویت، نمرەی هەڵسەنگاندنی بەردەوامی هەردوو وەرزەکان دیاری بکە بۆ ئەوەی بزانیت پێویستە چەند بهێنیت لە ئەزموونی خولی دووەم بۆ دەرچوون:',
+      ass1: 'هەڵسەنگاندنی ١',
+      ass2: 'هەڵسەنگاندنی ٢',
+      sem1: 'وەرزێ ئێکێ',
+      sem2: 'وەرزێ دووێ',
       sum_ass: 'کۆی هەڵسەنگاندن:',
-      aim: 'نمرەی پێویست لە ئەزموونی خولی دووەم (لە ٨٠):',
-      needed_marks: 'پێویستی بە +{diff} نمرە هەیە بۆ گەیشتن بە نمرەی ٥٠ و دەرچوون',
+      aim: 'نمرەی پێویست لە ئەزموونی خولی دووەم:',
+      needed_marks: 'پێویستی بە +{diff} نمرە هەیە بۆ دەرچوون',
       change_lang_btn: 'گۆڕینی زمان 🌐'
     },
     kub: {
@@ -87,12 +89,14 @@ export default function VerdictResultsView({
       r1_safe: 'قوتابی ب تەمامی دەربازبوویە و پێتڤی ب چو نمرەیێن دی نینە بۆ دوورکەفتن ژ خولا دووێ! 👏',
       r1_needs: 'بۆ قورتالبوون ژ خولا دووێ، پێتڤیە نمرەیا ڤان بابەتان بگەهینیە ٥٠ نمران:',
       r2_safe: 'قوتابی یێ دەربازبووی د هەمی بابەتان دا و پێتڤی ب ئامادەکاریێ نینە بۆ خولا دووێ! 🥳',
-      r2_needs: 'بۆ بابەتێن کەفتی، نمرەیێن هەلسەنگاندنا بەردەوام (ژ ٢٠) بنڤیسە دا بزانی کێمترین نمرەیا پێتڤی ل ئەزموونا خولا دووێ (ژ ٨٠) چەندە:',
-      ass1: 'هەلسەنگاندنا ١ (١٠)',
-      ass2: 'هەلسەنگاندنا ٢ (١٠)',
+      r2_needs: 'بۆ بابەتێن کەفتی، نمرەیێن هەلسەنگاندنا بەردەوام یێن هەردوو وەرزان بنڤیسە دا بزانی نمرەیا پێتڤی ل ئەزموونا خولا دووێ چەندە:',
+      ass1: 'هەلسەنگاندنا ١',
+      ass2: 'هەلسەنگاندنا ٢',
+      sem1: 'وەرزێ ئێکێ',
+      sem2: 'وەرزێ دووێ',
       sum_ass: 'کۆیا هەلسەنگاندنێ:',
-      aim: 'نمرەیا پێتڤی ل تاقیکردنەوا خولا دووێ (ژ ٨٠):',
-      needed_marks: 'پێتڤی ب +{diff} نمران هەیە بۆ گەهشتنێ ب نمرەیا ٥٠ و دەربازبوونێ',
+      aim: 'نمرەیا پێتڤی ل تاقیکردنەوا خولا دووێ:',
+      needed_marks: 'پێتڤی ب +{diff} نمران هەیە بۆ دەربازبوونێ',
       change_lang_btn: 'گۆهرینا زمانی 🌐'
     },
     ar: {
@@ -113,12 +117,14 @@ export default function VerdictResultsView({
       r1_safe: 'الطالب حاصل على علامة النجاح الكامل تماماً ولا يحتاج لدخول الدور الثاني! 👏',
       r1_needs: 'لتلافي الرسوب التام والدور الثاني، يجب زيادة درجات المواد الآتية لتصل لدرجة الصغرى (50 درجة):',
       r2_safe: 'اجتاز الطالب كافة المواد بنجاح، لا توجد مواد متبقية للتحضير منها للدور الثاني! 🥳',
-      r2_needs: 'للمواد غير المجتازة، يرجى تعبئة الأنشطة السنوية والتقييم (من 20) لمعرفة الدرجة المطلوبة في الامتحان التحريري النهائي للدور الثاني (من 80):',
-      ass1: 'التقييم الأول (10)',
-      ass2: 'التقييم الثاني (10)',
-      sum_ass: 'النشاط السنوي الكلي:',
-      aim: 'الدرجة التحررية المطلوبة في الدور الثاني (من 80):',
-      needed_marks: 'بحاجة إلى زيادة +{diff} درجات لتصل للمستوى الأدنى (50 درجة)',
+      r2_needs: 'للمواد غير المجتازة، يرجى تعبئة الأنشطة السنوية للفصلين لمعرفة الدرجة المطلوبة في امتحان الدور الثاني:',
+      ass1: 'التقييم 1',
+      ass2: 'التقييم 2',
+      sem1: 'الفصل الأول',
+      sem2: 'الفصل الثاني',
+      sum_ass: 'النشاط الكلي:',
+      aim: 'الدرجة التحررية المطلوبة في الدور الثاني:',
+      needed_marks: 'بحاجة إلى زيادة +{diff} درجات للنجاح',
       change_lang_btn: 'تغيير لغة النظام 🌐'
     },
     en: {
@@ -139,12 +145,14 @@ export default function VerdictResultsView({
       r1_safe: 'Student has passed all exams nicely and already avoids the Second Round entirely! 👏',
       r1_needs: 'To avoid the Second school round and qualify directly, these subjects need additional grade marks to reach 50:',
       r2_safe: 'All exams are passed, no failed subjects to prepare for Round 2! 🥳',
-      r2_needs: 'For other failed subjects, set your continuous assessments (out of 20) to compute the required final written exam grade (out of 80):',
-      ass1: 'Assessment 1 (10)',
-      ass2: 'Assessment 2 (10)',
+      r2_needs: 'For other failed subjects, set your continuous assessments for both semesters to compute the required final written exam grade:',
+      ass1: 'Assessment 1',
+      ass2: 'Assessment 2',
+      sem1: 'First Semester',
+      sem2: 'Second Semester',
       sum_ass: 'Total Assessment Settle:',
-      aim: 'Required written exam score out of 80 to pass:',
-      needed_marks: 'Needs +{diff} more marks to reach 50 and pass',
+      aim: 'Required written exam score:',
+      needed_marks: 'Needs +{diff} more marks to pass',
       change_lang_btn: 'Change Language 🌐'
     }
   }[activeLang];
@@ -654,8 +662,8 @@ export default function VerdictResultsView({
 
                     <div className="space-y-3">
                       {failedSubjectsForR2.map((sub) => {
-                        const { a1, a2 } = getAssessment(sub.id);
-                        const currentSum = a1 + a2;
+                        const { s1a1, s1a2, s2a1, s2a2 } = getAssessment(sub.id);
+                        const currentSum = s1a1 + s1a2 + s2a1 + s2a2;
                         
                         // Normal targets
                         const req50 = Math.max(0, 50 - currentSum);
@@ -693,83 +701,111 @@ export default function VerdictResultsView({
                               </span>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              {/* Assessment 1 inputs */}
-                              <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-500 flex justify-between">
-                                  <span>{dict.ass1}</span>
-                                  <span className="font-extrabold text-slate-700">{toLangDigits(a1, activeLang)}</span>
-                                </label>
-                                <div className="flex gap-2 items-center">
-                                  <input
-                                    type="range"
-                                    min="0"
-                                    max="10"
-                                    value={a1}
-                                    onChange={(e) => updateAssessment(sub.id, 'a1', e.target.value)}
-                                    className="w-full accent-indigo-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
-                                  />
+                            <div className="space-y-4">
+                              {/* Semester 1 */}
+                              <div className="space-y-2 relative">
+                                <div className="absolute inset-y-0 right-0 w-1 bg-indigo-100 rounded-full" />
+                                <div className="pr-3">
+                                  <label className="text-xs font-black text-indigo-800 flex items-center mb-2">
+                                    {dict.sem1}
+                                  </label>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold text-slate-500">{dict.ass1}</label>
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={s1a1}
+                                        onChange={(e) => updateAssessment(sub.id, 's1a1', e.target.value)}
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 outline-none transition-all"
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold text-slate-500">{dict.ass2}</label>
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={s1a2}
+                                        onChange={(e) => updateAssessment(sub.id, 's1a2', e.target.value)}
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 outline-none transition-all"
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* Assessment 2 inputs */}
-                              <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-500 flex justify-between">
-                                  <span>{dict.ass2}</span>
-                                  <span className="font-extrabold text-slate-700">{toLangDigits(a2, activeLang)}</span>
-                                </label>
-                                <div className="flex gap-2 items-center">
-                                  <input
-                                    type="range"
-                                    min="0"
-                                    max="10"
-                                    value={a2}
-                                    onChange={(e) => updateAssessment(sub.id, 'a2', e.target.value)}
-                                    className="w-full accent-indigo-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
-                                  />
+                              {/* Semester 2 */}
+                              <div className="space-y-2 relative">
+                                <div className="absolute inset-y-0 right-0 w-1 bg-violet-100 rounded-full" />
+                                <div className="pr-3">
+                                  <label className="text-xs font-black text-violet-800 flex items-center mb-2">
+                                    {dict.sem2}
+                                  </label>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold text-slate-500">{dict.ass1}</label>
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={s2a1}
+                                        onChange={(e) => updateAssessment(sub.id, 's2a1', e.target.value)}
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black text-slate-800 focus:border-violet-500 focus:ring-1 focus:ring-violet-200 outline-none transition-all"
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold text-slate-500">{dict.ass2}</label>
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={s2a2}
+                                        onChange={(e) => updateAssessment(sub.id, 's2a2', e.target.value)}
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black text-slate-800 focus:border-violet-500 focus:ring-1 focus:ring-violet-200 outline-none transition-all"
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
 
                             {/* Dynamic results calculation */}
-                            <div className="pt-2 border-t border-slate-100 space-y-3">
+                            <div className="pt-3 border-t border-slate-100 space-y-3 mt-4">
                               <div className="flex justify-between items-center text-xs text-slate-500 font-bold select-none">
                                 <span>{dict.sum_ass}</span>
-                                <span className="font-black text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">{toLangDigits(currentSum, activeLang)} \ ٢٠</span>
+                                <span className="font-black text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">{toLangDigits(currentSum, activeLang)}</span>
                               </div>
 
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] sm:text-xs font-bold">
                                 {/* Regular goals */}
-                                <div className="p-2.5 bg-indigo-50/50 border border-indigo-100/40 rounded-2xl space-y-1">
+                                <div className="p-3 bg-indigo-50/50 border border-indigo-100/40 rounded-2xl space-y-1">
                                   <span className="text-slate-500 block">
                                     {activeLang === 'kub' ? 'بۆ دەرچوونا گشتی (٥٠ نمرە):' : activeLang === 'kus' ? 'بۆ دەرچوونی گشتی (٥٠ نمرە):' : 'For general pass (50 marks):'}
                                   </span>
-                                  <span className="font-black text-indigo-750 block text-xs sm:text-sm">
-                                    🎯 {toLangDigits(req50, activeLang)} \ ٨٠
+                                  <span className="font-black text-indigo-750 block text-sm sm:text-base">
+                                    🎯 {toLangDigits(req50, activeLang)}
                                   </span>
                                 </div>
 
-                                <div className="p-2.5 bg-violet-50/50 border border-violet-100/40 rounded-2xl space-y-1">
+                                <div className="p-3 bg-violet-50/50 border border-violet-100/40 rounded-2xl space-y-1">
                                   <span className="text-slate-500 block">
                                     {activeLang === 'kub' ? 'بۆ مانا ب عوبور (٤٠ نمرە):' : activeLang === 'kus' ? 'بۆ تێپەڕین بە عوبور (٤٠ نمرە):' : activeLang === 'ar' ? 'للبقاء بالعبور (٤٠ درجة):' : 'For passing with Carry-Over (40 marks):'}
                                   </span>
-                                  <span className="font-black text-violet-750 block text-xs sm:text-sm">
-                                    ✨ {toLangDigits(req40, activeLang)} \ ٨٠
+                                  <span className="font-black text-violet-750 block text-sm sm:text-base">
+                                    ✨ {toLangDigits(req40, activeLang)}
                                   </span>
                                 </div>
 
                                 {/* Goals with leftover decision marks if available */}
                                 {remaining5 > 0 && (
-                                  <div className="col-span-1 sm:col-span-2 p-2.5 bg-amber-50/40 border border-amber-100/40 rounded-2xl space-y-1.5">
+                                  <div className="col-span-1 sm:col-span-2 p-3 bg-amber-50/40 border border-amber-100/40 rounded-2xl space-y-2">
                                     <span className="text-amber-800 block text-[10px] uppercase tracking-wider font-extrabold select-none">
                                       🛡️ {activeLang === 'kub' ? `ئەگەر بڕیارا مای (${remaining5} نمرە) بهێتە بکارئینان:` : activeLang === 'kus' ? `ئەگەر بڕیاری ماوە (${remaining5} نمرە) بەکاربهێنرێت:` : `If remaining pool (${remaining5} marks) is used:`}
                                     </span>
-                                    <div className="flex flex-wrap justify-between gap-2 text-[11px]">
-                                      <span>
-                                        {activeLang === 'kub' ? 'دەرچوون:' : 'دەرچوون:'} <strong className="text-indigo-650">{toLangDigits(reqWithDec50, activeLang)} \ ٨٠</strong>
+                                    <div className="flex flex-wrap justify-between gap-2 text-[11px] sm:text-xs text-slate-700">
+                                      <span className="flex items-center gap-1.5">
+                                        {activeLang === 'kub' ? 'دەرچوون:' : 'دەرچوون:'} <strong className="text-indigo-650 font-black">{toLangDigits(reqWithDec50, activeLang)}</strong>
                                       </span>
-                                      <span>
-                                        {activeLang === 'kub' ? 'عوبور (مەرجدار):' : 'عوبور:'} <strong className="text-violet-650">{toLangDigits(reqWithDec40, activeLang)} \ ٨0</strong>
+                                      <span className="flex items-center gap-1.5">
+                                        {activeLang === 'kub' ? 'عوبور (مەرجدار):' : 'عوبور:'} <strong className="text-violet-650 font-black">{toLangDigits(reqWithDec40, activeLang)}</strong>
                                       </span>
                                     </div>
                                   </div>
@@ -777,7 +813,7 @@ export default function VerdictResultsView({
                               </div>
 
                               {/* Weak subject encouraging prompt */}
-                              <div className="text-[10px] text-slate-400 italic text-right">
+                              <div className="text-[10px] text-slate-400 italic text-right mt-2">
                                 {activeLang === 'kub'
                                   ? '💡 بابەتەکێ لاواز هەبیت، بگەهینە ٤٠ دا ببیە عوبور!'
                                   : activeLang === 'kus'

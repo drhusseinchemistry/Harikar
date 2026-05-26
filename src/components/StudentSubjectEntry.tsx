@@ -229,8 +229,7 @@ export default function StudentSubjectEntry({
                       
                       <input 
                         type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
+                        inputMode="decimal"
                         value={sub.score}
                         onChange={(e) => updateSubjectScore(sub.id, e.target.value)}
                         className="w-10 text-center font-black text-xs text-indigo-950 bg-transparent border-0 focus:ring-0 p-0 outline-none"
