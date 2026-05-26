@@ -20,6 +20,7 @@ interface VerdictResultsViewProps {
   onModify: () => void;
   onShare: (reportText: string) => void;
   copied: boolean;
+  availableDecisionMarks: number;
 }
 
 export default function VerdictResultsView({
@@ -36,7 +37,8 @@ export default function VerdictResultsView({
   getSubjectName,
   onModify,
   onShare,
-  copied
+  copied,
+  availableDecisionMarks
 }: VerdictResultsViewProps) {
   
   // Toggles active bottom icon dashboard
@@ -214,7 +216,7 @@ export default function VerdictResultsView({
     };
 
     const F = failing.length;
-    const decisionDistributions = distributeDecisionMarks(F, 5);
+    const decisionDistributions = distributeDecisionMarks(F, availableDecisionMarks);
 
     const getPenalty = (gap: number) => {
       // Cubic penalty to strongly prioritize reducing larger gaps
@@ -434,6 +436,59 @@ export default function VerdictResultsView({
       text += `\n`;
     }
 
+    // 4. Round 2 Requirements
+    if (finalStatus !== 'passed' && failedSubjectsForR2.length > 0) {
+      let r2Header = '';
+      if (activeLang === 'kub') r2Header = '🎯 ئامانجێن خولا دووێ:';
+      else if (activeLang === 'kus') r2Header = '🎯 ئامانجەکانی خولی دووەم:';
+      else if (activeLang === 'ar') r2Header = '🎯 أهداف الدور الثاني:';
+      else r2Header = '🎯 Round 2 Targets:';
+
+      text += `${r2Header}\n`;
+      
+      const remaining5 = Math.max(0, availableDecisionMarks - (calculation?.helpMarksUsed5 || 0));
+
+      failedSubjectsForR2.forEach(sub => {
+        const { s1a1, s1a2, s2a1, s2a2 } = getAssessment(sub.id);
+        const isUboorSubject = weakestSubject?.id === sub.id;
+                        
+        const semTarget = isUboorSubject ? 40 : 50;
+        const reqS1 = Math.max(0, semTarget - (s1a1 + s1a2));
+        const reqS2 = Math.max(0, semTarget - (s2a1 + s2a2));
+        const totalReq = reqS1 + reqS2;
+        const reqWithDecTotal = Math.max(0, totalReq - (remaining5 * 2));
+
+        let uboorNote = '';
+        if (isUboorSubject) {
+          if (activeLang === 'kub') uboorNote = ' (بۆ وەرگرتنا عوبورێ)';
+          else if (activeLang === 'kus') uboorNote = ' (بۆ وەرگرتنی عوبور)';
+          else if (activeLang === 'ar') uboorNote = ' (للحصول على العبور)';
+          else uboorNote = ' (For Carry-Over)';
+        }
+
+        let subjLine = `  📚 ${getSubjectName(sub)}${uboorNote}:\n`;
+        if (activeLang === 'kub') {
+          subjLine += `     - وەرزێ ١: پێتڤی ب ${toLangDigits(reqS1, activeLang)} نمرەیە\n`;
+          subjLine += `     - وەرزێ ٢: پێتڤی ب ${toLangDigits(reqS2, activeLang)} نمرەیە\n`;
+          if (remaining5 > 0) subjLine += `     - ئەگەر نمرێن بڕیارێ بهێنە بکارئینان، کۆی گشتی دێ کێم بیت بۆ: ${toLangDigits(reqWithDecTotal, activeLang)}\n`;
+        } else if (activeLang === 'kus') {
+          subjLine += `     - وەرزی ١: پێویستی بە ${toLangDigits(reqS1, activeLang)} نمرەیە\n`;
+          subjLine += `     - وەرزی ٢: پێویستی بە ${toLangDigits(reqS2, activeLang)} نمرەیە\n`;
+          if (remaining5 > 0) subjLine += `     - ئەگەر نمرەی بڕیار بەکاربهێنرێت، کۆی گشتی کەم دەبێت بۆ: ${toLangDigits(reqWithDecTotal, activeLang)}\n`;
+        } else if (activeLang === 'ar') {
+          subjLine += `     - الفصل 1: بحاجة لـ ${toLangDigits(reqS1, activeLang)} درجة\n`;
+          subjLine += `     - الفصل 2: بحاجة لـ ${toLangDigits(reqS2, activeLang)} درجة\n`;
+          if (remaining5 > 0) subjLine += `     - بالاستفادة من درجات القرار يحتاج إلى: ${toLangDigits(reqWithDecTotal, activeLang)} في المجموع\n`;
+        } else {
+          subjLine += `     - Sem 1 Goal: ${toLangDigits(reqS1, activeLang)} marks\n`;
+          subjLine += `     - Sem 2 Goal: ${toLangDigits(reqS2, activeLang)} marks\n`;
+          if (remaining5 > 0) subjLine += `     - With decision marks, total needed becomes: ${toLangDigits(reqWithDecTotal, activeLang)}\n`;
+        }
+        text += subjLine;
+      });
+      text += `\n`;
+    }
+
     // Footnote
     let footnote = '';
     if (activeLang === 'kub') footnote = '📌 ئەڤ کارنامەیە ب شێوازەکێ ئەندازیاری و زیرەک نمرێن بڕیار و عوبورێ دابەش دکەت دا کو کەمترین هاوکاری ژلایێ مامۆستایان پێویست بیت بۆ سەرکەوتنا قوتابی.';
@@ -629,7 +684,7 @@ export default function VerdictResultsView({
           )}
 
           {activeBottomCategory === 'r2' && (() => {
-            const remaining5 = Math.max(0, 5 - (calculation?.helpMarksUsed5 || 0));
+            const remaining5 = Math.max(0, availableDecisionMarks - (calculation?.helpMarksUsed5 || 0));
             return (
               <div className="space-y-4">
                 <h3 className="text-sm font-black text-slate-800 flex items-center gap-2 select-none">
@@ -663,18 +718,17 @@ export default function VerdictResultsView({
                     <div className="space-y-3">
                       {failedSubjectsForR2.map((sub) => {
                         const { s1a1, s1a2, s2a1, s2a2 } = getAssessment(sub.id);
-                        const currentSum = s1a1 + s1a2 + s2a1 + s2a2;
                         
-                        // Normal targets
-                        const req50 = Math.max(0, 50 - currentSum);
-                        const req40 = Math.max(0, 40 - currentSum);
-
-                        // Targets with leftover decision marks applied
-                        const reqWithDec50 = Math.max(0, 50 - currentSum - remaining5);
-                        const reqWithDec40 = Math.max(0, 40 - currentSum - remaining5);
-
                         const calcSub = calculation?.subjects.find(s => s.id === sub.id);
                         const isUboorSubject = weakestSubject?.id === sub.id;
+                        
+                        const semTarget = isUboorSubject ? 40 : 50;
+                        const reqS1 = Math.max(0, semTarget - (s1a1 + s1a2));
+                        const reqS2 = Math.max(0, semTarget - (s2a1 + s2a2));
+
+                        // Total combined targets with leftover decision marks applied
+                        const totalReq = reqS1 + reqS2;
+                        const reqWithDecTotal = Math.max(0, totalReq - (remaining5 * 2));
                         
                         let round2Badge = activeLang === 'en' ? 'ROUND 2 EXAM' : 'کۆنتڕۆڵی خولی دووەم';
                         if (isUboorSubject) {
@@ -713,21 +767,23 @@ export default function VerdictResultsView({
                                     <div className="space-y-1">
                                       <label className="text-[10px] font-bold text-slate-500">{dict.ass1}</label>
                                       <input
-                                        type="text"
-                                        inputMode="decimal"
-                                        value={s1a1}
+                                        type="number"
+                                        step="any"
+                                        value={s1a1 === 0 ? '' : s1a1}
                                         onChange={(e) => updateAssessment(sub.id, 's1a1', e.target.value)}
                                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 outline-none transition-all"
+                                        placeholder="0"
                                       />
                                     </div>
                                     <div className="space-y-1">
                                       <label className="text-[10px] font-bold text-slate-500">{dict.ass2}</label>
                                       <input
-                                        type="text"
-                                        inputMode="decimal"
-                                        value={s1a2}
+                                        type="number"
+                                        step="any"
+                                        value={s1a2 === 0 ? '' : s1a2}
                                         onChange={(e) => updateAssessment(sub.id, 's1a2', e.target.value)}
                                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 outline-none transition-all"
+                                        placeholder="0"
                                       />
                                     </div>
                                   </div>
@@ -745,21 +801,23 @@ export default function VerdictResultsView({
                                     <div className="space-y-1">
                                       <label className="text-[10px] font-bold text-slate-500">{dict.ass1}</label>
                                       <input
-                                        type="text"
-                                        inputMode="decimal"
-                                        value={s2a1}
+                                        type="number"
+                                        step="any"
+                                        value={s2a1 === 0 ? '' : s2a1}
                                         onChange={(e) => updateAssessment(sub.id, 's2a1', e.target.value)}
                                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black text-slate-800 focus:border-violet-500 focus:ring-1 focus:ring-violet-200 outline-none transition-all"
+                                        placeholder="0"
                                       />
                                     </div>
                                     <div className="space-y-1">
                                       <label className="text-[10px] font-bold text-slate-500">{dict.ass2}</label>
                                       <input
-                                        type="text"
-                                        inputMode="decimal"
-                                        value={s2a2}
+                                        type="number"
+                                        step="any"
+                                        value={s2a2 === 0 ? '' : s2a2}
                                         onChange={(e) => updateAssessment(sub.id, 's2a2', e.target.value)}
                                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black text-slate-800 focus:border-violet-500 focus:ring-1 focus:ring-violet-200 outline-none transition-all"
+                                        placeholder="0"
                                       />
                                     </div>
                                   </div>
@@ -769,48 +827,46 @@ export default function VerdictResultsView({
 
                             {/* Dynamic results calculation */}
                             <div className="pt-3 border-t border-slate-100 space-y-3 mt-4">
-                              <div className="flex justify-between items-center text-xs text-slate-500 font-bold select-none">
-                                <span>{dict.sum_ass}</span>
-                                <span className="font-black text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">{toLangDigits(currentSum, activeLang)}</span>
-                              </div>
-
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] sm:text-xs font-bold">
-                                {/* Regular goals */}
-                                <div className="p-3 bg-indigo-50/50 border border-indigo-100/40 rounded-2xl space-y-1">
-                                  <span className="text-slate-500 block">
-                                    {activeLang === 'kub' ? 'بۆ دەرچوونا گشتی (٥٠ نمرە):' : activeLang === 'kus' ? 'بۆ دەرچوونی گشتی (٥٠ نمرە):' : 'For general pass (50 marks):'}
-                                  </span>
-                                  <span className="font-black text-indigo-750 block text-sm sm:text-base">
-                                    🎯 {toLangDigits(req50, activeLang)}
+                              <div className="grid grid-cols-1 gap-3 text-[11px] sm:text-xs font-bold">
+                                {/* Semester 1 Target */}
+                                <div className="p-3 bg-indigo-50/50 border border-indigo-100/40 rounded-2xl flex justify-between items-center">
+                                  <div className="space-y-0.5">
+                                    <span className="text-slate-500 block">
+                                      {dict.sem1} {isUboorSubject ? (activeLang === 'en' ? '(Carry-Over: 40 marks)' : '(عوبور: ٤٠ نمرە)') : (activeLang === 'en' ? '(Pass: 50 marks)' : '(دەرچوون: ٥٠ نمرە)')}
+                                    </span>
+                                  </div>
+                                  <span className="font-black text-indigo-750 text-base sm:text-lg">
+                                    🎯 {toLangDigits(reqS1, activeLang)}
                                   </span>
                                 </div>
 
-                                <div className="p-3 bg-violet-50/50 border border-violet-100/40 rounded-2xl space-y-1">
-                                  <span className="text-slate-500 block">
-                                    {activeLang === 'kub' ? 'بۆ مانا ب عوبور (٤٠ نمرە):' : activeLang === 'kus' ? 'بۆ تێپەڕین بە عوبور (٤٠ نمرە):' : activeLang === 'ar' ? 'للبقاء بالعبور (٤٠ درجة):' : 'For passing with Carry-Over (40 marks):'}
-                                  </span>
-                                  <span className="font-black text-violet-750 block text-sm sm:text-base">
-                                    ✨ {toLangDigits(req40, activeLang)}
+                                {/* Semester 2 Target */}
+                                <div className="p-3 bg-violet-50/50 border border-violet-100/40 rounded-2xl flex justify-between items-center">
+                                  <div className="space-y-0.5">
+                                    <span className="text-slate-500 block">
+                                      {dict.sem2} {isUboorSubject ? (activeLang === 'en' ? '(Carry-Over: 40 marks)' : '(عوبور: ٤٠ نمرە)') : (activeLang === 'en' ? '(Pass: 50 marks)' : '(دەرچوون: ٥٠ نمرە)')}
+                                    </span>
+                                  </div>
+                                  <span className="font-black text-violet-750 text-base sm:text-lg">
+                                    🎯 {toLangDigits(reqS2, activeLang)}
                                   </span>
                                 </div>
 
                                 {/* Goals with leftover decision marks if available */}
                                 {remaining5 > 0 && (
-                                  <div className="col-span-1 sm:col-span-2 p-3 bg-amber-50/40 border border-amber-100/40 rounded-2xl space-y-2">
+                                  <div className="col-span-1 p-3 bg-amber-50/40 border border-amber-100/40 rounded-2xl space-y-2">
                                     <span className="text-amber-800 block text-[10px] uppercase tracking-wider font-extrabold select-none">
-                                      🛡️ {activeLang === 'kub' ? `ئەگەر بڕیارا مای (${remaining5} نمرە) بهێتە بکارئینان:` : activeLang === 'kus' ? `ئەگەر بڕیاری ماوە (${remaining5} نمرە) بەکاربهێنرێت:` : `If remaining pool (${remaining5} marks) is used:`}
+                                      🛡️ {activeLang === 'kub' ? `ئەگەر بڕیارا مای (${remaining5} نمرە) بهێتە بکارئینان:` : activeLang === 'kus' ? `ئەگەر بڕیاری ماوە (${remaining5} نمرە) بەکاربهێنرێت:` : activeLang === 'ar' ? `إذا تم استخدام القرار المتبقي (${remaining5} درجات):` : `If remaining pool (${remaining5} marks) is used:`}
                                     </span>
                                     <div className="flex flex-wrap justify-between gap-2 text-[11px] sm:text-xs text-slate-700">
                                       <span className="flex items-center gap-1.5">
-                                        {activeLang === 'kub' ? 'دەرچوون:' : 'دەرچوون:'} <strong className="text-indigo-650 font-black">{toLangDigits(reqWithDec50, activeLang)}</strong>
-                                      </span>
-                                      <span className="flex items-center gap-1.5">
-                                        {activeLang === 'kub' ? 'عوبور (مەرجدار):' : 'عوبور:'} <strong className="text-violet-650 font-black">{toLangDigits(reqWithDec40, activeLang)}</strong>
+                                        {activeLang === 'kub' ? 'کۆیا هەردوو وەرزان دێ کێم بیت بۆ:' : activeLang === 'kus' ? 'کۆی هەردوو وەرز کەم دەبێت بۆ:' : activeLang === 'ar' ? 'مجموع الفصلين سيقل إلى:' : 'Total required sum will decrease to:'} <strong className="text-amber-700 font-black">{toLangDigits(reqWithDecTotal, activeLang)}</strong>
                                       </span>
                                     </div>
                                   </div>
                                 )}
                               </div>
+
 
                               {/* Weak subject encouraging prompt */}
                               <div className="text-[10px] text-slate-400 italic text-right mt-2">

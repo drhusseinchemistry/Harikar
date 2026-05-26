@@ -5,7 +5,8 @@ import { SubjectGrade, SubjectResult, CalculationResult, HelpSystemMode } from '
  */
 export function calculateGrades(
   inputSubjects: SubjectGrade[],
-  helpMode: HelpSystemMode = 'total_pool'
+  helpMode: HelpSystemMode = 'total_pool',
+  availableDecisionMarks: number = 5
 ): CalculationResult {
   const explanationSteps: CalculationResult['explanationSteps'] = [];
 
@@ -88,7 +89,7 @@ export function calculateGrades(
     return results;
   };
 
-  const decisionDistributions = distributeDecisionMarks(F, 5);
+  const decisionDistributions = distributeDecisionMarks(F, availableDecisionMarks);
 
   const getPenalty = (gap: number) => {
     // Cubic penalty to strongly prioritize reducing larger gaps

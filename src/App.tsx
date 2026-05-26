@@ -38,6 +38,7 @@ export default function App() {
   // Subject List
   const [subjects, setSubjects] = useState<SubjectGrade[]>(ALL_SUBJECTS_DEFAULT);
   const [checkedSubjects, setCheckedSubjects] = useState<Record<string, boolean>>({});
+  const [availableDecisionMarks, setAvailableDecisionMarks] = useState<number>(5);
 
   const activeSubjects = useMemo(() => {
     return subjects.filter(s => checkedSubjects[s.id] !== false);
@@ -45,8 +46,8 @@ export default function App() {
 
   // Solver Engine Integration
   const calculation = useMemo(() => {
-    return calculateGrades(activeSubjects, 'total_pool');
-  }, [activeSubjects]);
+    return calculateGrades(activeSubjects, 'total_pool', availableDecisionMarks);
+  }, [activeSubjects, availableDecisionMarks]);
 
   const averageScore = useMemo(() => {
     if (activeSubjects.length === 0) return 0;
@@ -197,6 +198,8 @@ export default function App() {
           setCheckedSubjects={setCheckedSubjects}
           updateSubjectScore={updateSubjectScore}
           getSubjectName={getSubjectName}
+          availableDecisionMarks={availableDecisionMarks}
+          setAvailableDecisionMarks={setAvailableDecisionMarks}
           onSubmit={() => setActiveStep(2)}
           onBackToLang={() => setActiveStep(0)}
         />
@@ -217,6 +220,7 @@ export default function App() {
           onModify={() => setActiveStep(1)}
           onShare={handleCopyReport}
           copied={copied}
+          availableDecisionMarks={availableDecisionMarks}
         />
       )}
       {activeStep > 0 && <Footer activeLang={activeLang} />}

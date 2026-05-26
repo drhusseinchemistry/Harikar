@@ -16,6 +16,8 @@ interface StudentSubjectEntryProps {
   setCheckedSubjects: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   updateSubjectScore: (id: string, scoreStr: string) => void;
   getSubjectName: (sub: SubjectGrade) => string;
+  availableDecisionMarks: number;
+  setAvailableDecisionMarks: (val: number) => void;
   onSubmit: () => void;
   onBackToLang: () => void;
 }
@@ -31,6 +33,8 @@ export default function StudentSubjectEntry({
   setCheckedSubjects,
   updateSubjectScore,
   getSubjectName,
+  availableDecisionMarks,
+  setAvailableDecisionMarks,
   onSubmit,
   onBackToLang
 }: StudentSubjectEntryProps) {
@@ -40,6 +44,7 @@ export default function StudentSubjectEntry({
       name: 'ناوی قوتابی',
       class: 'پۆلی خوێندن',
       placeholder: 'ناوی قوتابی بنووسە...',
+      decisionMarks: 'نمرەی بڕیاری بەردەست (بۆ نموونە ٣)',
       head: 'بابەتەکان هەڵبژێرە لەگەڵ نمرەکانیان 📝',
       desc: 'بۆ چالاککردنی هەر بابەتێک، چوارگۆشەی پاڵ بابەتەکە دابگرە و نمرەکەی دیاری بکە (لە نێوان ٠ بۆ ١٠٠).',
       submit: 'ئەژمارکردن و بینینی ئەنجام 🏆',
@@ -49,6 +54,7 @@ export default function StudentSubjectEntry({
       name: 'ناڤێ قوتابی',
       class: 'پۆلا خاندنێ',
       placeholder: 'ناڤێ قوتابی بنڤیسە...',
+      decisionMarks: 'نمرەیێن بڕیارێ یێن بەردەست (بۆ نموونە ٣)',
       head: 'بابەتان هەلبژێرە دگەل نمرێن وان 📝',
       desc: 'بۆ پێخستنا هەر بابەتەکی، چوارگوشا ڕەخ بابەتێ دابگرە و نمرەیا وێ بنڤیسە (دناڤبەرا ٠ تا ١٠٠).',
       submit: 'ئەژمارکرن و دیتنا ئەنجامی 🏆',
@@ -58,6 +64,7 @@ export default function StudentSubjectEntry({
       name: 'اسم الطالب',
       class: 'الصف الدراسي',
       placeholder: 'اكتب اسم الطالب هنا...',
+      decisionMarks: 'درجات القرار المتاحة (مثال 3)',
       head: 'أدخل معلومات الطالب والمواد الدراسية 📝',
       desc: 'قم بتفعيل المواد عن طريق تحديد المربع بجانب المادة، ثم أدخل درجتها الخاصة من (0 إلى 100).',
       submit: 'احتساب النتيجة والترشيح 🏆',
@@ -67,6 +74,7 @@ export default function StudentSubjectEntry({
       name: 'Student Name',
       class: 'Grade Level',
       placeholder: 'Enter student name...',
+      decisionMarks: 'Available Decision Marks (e.g. 3)',
       head: 'Select Subjects & Input Grades 📝',
       desc: 'Click on the checkbox beside any subject to include it, and enter its score (from 0 to 100).',
       submit: 'Calculate & View Verdict 🏆',
@@ -120,7 +128,7 @@ export default function StudentSubjectEntry({
 
       {/* 2. Student Info Card */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-sm space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Student Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-black text-slate-600 flex items-center gap-1.5">
@@ -158,6 +166,22 @@ export default function StudentSubjectEntry({
                 ▼
               </span>
             </div>
+          </div>
+
+          {/* Decision Marks Limit */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-slate-600 flex items-center gap-1.5">
+              <span>🛡️</span> {labelTexts.decisionMarks}
+            </label>
+            <input 
+              type="number"
+              min="0"
+              max="5"
+              step="1"
+              value={availableDecisionMarks === 0 ? '' : availableDecisionMarks}
+              onChange={(e) => setAvailableDecisionMarks(e.target.value ? Math.min(5, Math.max(0, parseInt(e.target.value) || 0)) : 0)}
+              className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-2xl px-4 py-3 text-sm transition-all outline-none font-bold text-slate-850"
+            />
           </div>
         </div>
       </div>
@@ -228,11 +252,12 @@ export default function StudentSubjectEntry({
                       </button>
                       
                       <input 
-                        type="text"
-                        inputMode="decimal"
-                        value={sub.score}
+                        type="number"
+                        step="any"
+                        value={sub.score === 0 ? '' : sub.score}
                         onChange={(e) => updateSubjectScore(sub.id, e.target.value)}
-                        className="w-10 text-center font-black text-xs text-indigo-950 bg-transparent border-0 focus:ring-0 p-0 outline-none"
+                        className="w-12 text-center font-black text-sm text-indigo-950 bg-transparent border-0 focus:ring-0 p-0 outline-none"
+                        placeholder="0"
                       />
 
                       <button
